@@ -129,7 +129,7 @@ void GameplayScene::drawBlock(int blockId, int blockTypeId)
 
 void GameplayScene::destroyBlocks(std::vector<Position> positions)
 {
-    for (Position pos : positions)
+    for (const auto& pos : positions)
     {
         auto blockId = pos.yPos * Game::WIDTH + pos.xPos;
         static_cast<DrawNode*>(this->board[blockId])->drawPolygon(block, 4, Color4F::BLACK, 1, Color4F::BLACK);

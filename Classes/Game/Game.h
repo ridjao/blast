@@ -12,7 +12,7 @@ class Game
 public:
 	Game::Game();
 	SceneDTO start();
-	SceneDTO makeMove(Move move);
+	SceneDTO makeMove(const Move& move);
 	bool hasLegalMoves();
 	int getScore();
 

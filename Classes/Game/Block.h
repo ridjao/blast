@@ -11,7 +11,7 @@ public:
 	Block(Block&&);
 	Block& operator=(Block&&);
 
-	std::vector<Position> findBlocksToDestroy(std::vector<std::vector<Block>>& grid);
+	std::vector<Position> findBlocksToDestroy(const std::vector<std::vector<Block>>& grid);
 	int blockTypeId;
 	Position position;
 private:

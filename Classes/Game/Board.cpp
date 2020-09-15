@@ -18,12 +18,12 @@ std::vector<int> Board::setup()
 	return makeBlockList(grid);
 }
 
-std::vector<Position> Board::findBlocksToDestroy(Position start)
+std::vector<Position> Board::findBlocksToDestroy(const Position& start)
 {
 	return grid[start.yPos][start.xPos].findBlocksToDestroy(grid);
 }
 
-std::vector<int> Board::replaceBlocks(std::vector<Position> positions)
+std::vector<int> Board::replaceBlocks(const std::vector<Position>& positions)
 {
 	for (size_t i = 0; i < positions.size(); i++)
 	{

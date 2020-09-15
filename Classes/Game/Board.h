@@ -10,8 +10,8 @@ class Board
 public:
 	Board::Board(int width, int height);
 	std::vector<int> setup();
-	std::vector<Position> findBlocksToDestroy(Position start);
-	std::vector<int> replaceBlocks(std::vector<Position> positions);
+	std::vector<Position> findBlocksToDestroy(const Position& start);
+	std::vector<int> replaceBlocks(const std::vector<Position>& positions);
 	bool hasLegalMoves();
 };
 

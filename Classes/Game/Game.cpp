@@ -7,7 +7,7 @@ bool Game::hasLegalMoves()
 	return board.hasLegalMoves();
 }
 
-SceneDTO Game::makeMove(Move move)
+SceneDTO Game::makeMove(const Move& move)
 {
 	SceneDTO dto;
 	dto.blocksToDestroy = board.findBlocksToDestroy(move);

@@ -5,7 +5,7 @@
 class Block::BlockImpl
 {
 public:
-	virtual std::vector<Position> BlockImpl::findBlocksToDestroy(std::vector<std::vector<Block>>& grid, int xPos, int yPos, int color)
+	virtual std::vector<Position> BlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, int xPos, int yPos, int color)
 	{
 		std::vector<std::vector<int>> colorGrid;
 		for (size_t y = 0; y < grid.size(); y++)
@@ -19,7 +19,7 @@ public:
 		return findBlocksToDestroy(grid, colorGrid, xPos, yPos, color);
 	}
 
-	std::vector<Position> BlockImpl::findBlocksToDestroy(std::vector<std::vector<Block>>& grid, std::vector<std::vector<int>>& colorGrid, int xPos, int yPos, int color)
+	std::vector<Position> BlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, std::vector<std::vector<int>>& colorGrid, int xPos, int yPos, int color)
 	{
 		std::vector<Position> blocksToDestroy;
 
@@ -68,7 +68,7 @@ public:
 		}
 
 		std::vector<Position> blocksToCheck = blocksToDestroy;
-		for (Position pos : blocksToCheck)
+		for (const auto& pos : blocksToCheck)
 		{
 			std::vector<Position> more = grid[pos.yPos][pos.xPos].pimpl->findBlocksToDestroy(grid, colorGrid, pos.xPos, pos.yPos, color);
 			blocksToDestroy.insert(blocksToDestroy.end(), more.begin(), more.end());
@@ -81,7 +81,7 @@ public:
 class Block::StripeBlockImpl : public Block::BlockImpl
 {
 public:
-	virtual std::vector<Position> StripeBlockImpl::findBlocksToDestroy(std::vector<std::vector<Block>>& grid,
+	virtual std::vector<Position> StripeBlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
 		int xPos, int yPos, int color)
 	{
 		std::vector<Position> blocksToDestroy;
@@ -98,7 +98,7 @@ public:
 class Block::BombBlockImpl : public Block::BlockImpl
 {
 public:
-	virtual std::vector<Position> BombBlockImpl::findBlocksToDestroy(std::vector<std::vector<Block>>& grid,
+	virtual std::vector<Position> BombBlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
 		int xPos, int yPos, int color)
 	{
 		std::vector<Position> blocksToDestroy;
@@ -156,7 +156,7 @@ Block::~Block() = default;
 Block::Block(Block&& block) = default;
 Block& Block::operator=(Block&&) = default;
 
-std::vector<Position> Block::findBlocksToDestroy(std::vector<std::vector<Block>>& grid)
+std::vector<Position> Block::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid)
 {
 	std::vector<Position> blocksToDestroy = this->pimpl->findBlocksToDestroy(grid, this->position.xPos, this->position.yPos, this->blockTypeId);
 	if (blocksToDestroy.size() > 0)
