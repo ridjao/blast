@@ -2,6 +2,7 @@
 #include <vector>
 #include "Block.h"
 #include "Position.h"
+#include "BlockTypeIds.h"
 
 class Board
 {
@@ -9,9 +10,9 @@ class Board
 	std::vector<std::vector<Block>> grid;
 public:
 	Board::Board(int width, int height);
-	std::vector<int> setup();
+	std::vector<BlockTypeId> setup();
 	std::vector<Position> findBlocksToDestroy(const Position& start);
-	std::vector<int> replaceBlocks(const std::vector<Position>& positions);
+	std::vector<BlockTypeId> replaceBlocks(const std::vector<Position>& positions);
 	bool hasLegalMoves();
 };
 

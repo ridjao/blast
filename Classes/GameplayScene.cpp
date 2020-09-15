@@ -1,7 +1,6 @@
 #include "GameplayScene.h"
 #include "GameoverScene.h"
 #include "Game/SceneDTO.h"
-#include "Game/BlockTypeIds.h"
 
 USING_NS_CC;
 
@@ -105,11 +104,11 @@ void GameplayScene::createBoardSlot(int blockId, float posX, float posY)
     this->board.push_back(node);
 }
 
-void GameplayScene::drawBoard(std::vector<int> blocks)
+void GameplayScene::drawBoard(const std::vector<BlockTypeId>& blocks)
 {
     for (size_t blockId = 0; blockId < blocks.size(); blockId++)
     {
-        int blockTypeId = blocks[blockId];
+        BlockTypeId blockTypeId = blocks[blockId];
         this->drawBlock(blockId, blockTypeId);
     }
 }
@@ -119,15 +118,15 @@ void GameplayScene::drawBlock(int blockId, int blockTypeId)
     static const Color4F colors[]{ Color4F::RED, Color4F::BLUE, Color4F::GREEN, Color4F::YELLOW,
        Color4F::MAGENTA, Color4F::ORANGE };
 
-    if (blockTypeId >= BlockTypes::RED)
+    if (blockTypeId >= BlockTypeId::RED)
         static_cast<DrawNode*>(this->board[blockId])->drawPolygon(block, 4, colors[blockTypeId], 1, colors[blockTypeId]);
-    else if (blockTypeId == BlockTypes::STRIPE)
+    else if (blockTypeId == BlockTypeId::STRIPE)
         static_cast<DrawNode*>(this->board[blockId])->drawPolygon(stripe, 4, Color4F::WHITE, 1, Color4F::WHITE);
-    else if (blockTypeId == BlockTypes::BOMB)
+    else if (blockTypeId == BlockTypeId::BOMB)
         static_cast<DrawNode*>(this->board[blockId])->drawDot(center, blockSize / 3, Color4F::WHITE);
 }
 
-void GameplayScene::destroyBlocks(std::vector<Position> positions)
+void GameplayScene::destroyBlocks(const std::vector<Position>& positions)
 {
     for (const auto& pos : positions)
     {

@@ -1,7 +1,8 @@
 #pragma once
-#include<vector>
-#include<memory>
-#include"Position.h"
+#include <vector>
+#include <memory>
+#include "Position.h"
+#include "BlockTypeIds.h"
 
 class Block
 {
@@ -12,7 +13,7 @@ public:
 	Block& operator=(Block&&);
 
 	std::vector<Position> findBlocksToDestroy(const std::vector<std::vector<Block>>& grid);
-	int blockTypeId;
+	BlockTypeId blockTypeId;
 	Position position;
 private:
 	class BlockImpl;
