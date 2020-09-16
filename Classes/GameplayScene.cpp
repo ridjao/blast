@@ -23,23 +23,29 @@ bool GameplayScene::init()
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
+    auto fontSize = 24.0f;
+    auto xMargin = visibleSize.width / 64;
+    auto yMargin = visibleSize.height / 64;
 
-    this->score = Label::createWithTTF("Score: 0", "fonts/Marker Felt.ttf", 24);
+    this->score = Label::createWithTTF("Score: 0", "fonts/Marker Felt.ttf", fontSize);
     this->score->setAnchorPoint(Vec2(0, 0));
     this->score->setHorizontalAlignment(TextHAlignment::LEFT);
     this->score->setVerticalAlignment(TextVAlignment::BOTTOM);
-    this->score->setPosition(Vec2(origin.x + 5,
-        origin.y + visibleSize.height - this->score->getContentSize().height - 5));
+    this->score->setPosition(Vec2(origin.x + xMargin,
+        origin.y + visibleSize.height - this->score->getContentSize().height - yMargin));
     this->addChild(this->score, 1);
 
     this->timeLeft = 120;
-    this->timer = Label::createWithTTF("Time: " + std::to_string(this->timeLeft), "fonts/Marker Felt.ttf", 24);
-    this->timer->setPosition(Vec2(origin.x + visibleSize.width - visibleSize.width / 8,
-        origin.y + visibleSize.height - this->timer->getContentSize().height));
+    this->timer = Label::createWithTTF("Time: " + std::to_string(this->timeLeft), "fonts/Marker Felt.ttf", fontSize);
+    this->timer->setAnchorPoint(Vec2(0, 0));
+    this->timer->setPosition(Vec2(origin.x + visibleSize.width - this->timer->getContentSize().width - xMargin,
+        origin.y + visibleSize.height - this->timer->getContentSize().height - yMargin));
     this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::updateTimer), 1.0f);
     this->addChild(this->timer, 1);
 
-    this->createBoard(275, 150);
+    auto boardOriginX = visibleSize.width / 2 - (blockSize * Game::WIDTH + 0.2f * blockSize * (Game::WIDTH - 1)) / 2;
+    auto boardOriginY = visibleSize.height / 2 - (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
+    this->createBoard(boardOriginX, boardOriginY);
     SceneDTO dto = this->game.start();
     this->drawBoard(dto.boardBlocks);
 
@@ -48,37 +54,51 @@ bool GameplayScene::init()
 
 void GameplayScene::updateTimer(float dt)
 {
-    if (this->timeLeft == 0)
+    if (--this->timeLeft <= 0)
     {
         Director::getInstance()->replaceScene(GameoverScene::createScene(this->game.getScore()));
         return;
     }
-    this->timer->setString("Time: " + std::to_string(--this->timeLeft));
+
+    auto timeLeftStr = std::to_string(this->timeLeft);
+    auto timeWidth = timeLeftStr.length();
+    this->timer->setString("Time: " + timeLeftStr);
+    static auto prevTimeWidth = timeWidth;
+    if (prevTimeWidth != timeWidth)
+    {
+        auto visibleSize = Director::getInstance()->getVisibleSize();
+        Vec2 origin = Director::getInstance()->getVisibleOrigin();
+        auto xMargin = visibleSize.width / 64;
+        auto yMargin = visibleSize.height / 64;
+        this->timer->setPosition(Vec2(origin.x + visibleSize.width - this->timer->getContentSize().width - xMargin,
+            origin.y + visibleSize.height - this->timer->getContentSize().height - yMargin));
+        prevTimeWidth = timeWidth;
+    }
 }
 
 void GameplayScene::updateScore(int score)
 {
-    this->score->setString(std::string("Score: ") + std::to_string(score));
+    this->score->setString("Score: " + std::to_string(score));
 }
 
-void GameplayScene::createBoard(int originX, int originY)
+void GameplayScene::createBoard(float originX, float originY)
 {
     for (int y = 0; y < Game::HEIGHT; y++)
     {
         for (int x = 0; x < Game::WIDTH; x++)
         {
-            int blockId = y * Game::WIDTH + x;
-            this->createBoardSlot(blockId, originX + (blockSize + 10.f) * x, originY + (blockSize + 10.f) * y);
+            int slotId = y * Game::WIDTH + x;
+            this->createBoardSlot(slotId, originX + 1.2f * blockSize * x, originY + 1.2f * blockSize * y);
         }
     }
 }
 
-void GameplayScene::createBoardSlot(int blockId, float posX, float posY)
+void GameplayScene::createBoardSlot(int slotId, float posX, float posY)
 {
     auto node = DrawNode::create();
     node->setPosition(posX, posY);
     node->setContentSize(Size(blockSize, blockSize));
-    node->setUserData((void*)blockId);
+    node->setUserData((void*)slotId);
     node->setUserObject(this);
 
     auto touchListener = EventListenerTouchOneByOne::create();
@@ -95,49 +115,49 @@ void GameplayScene::createBoardSlot(int blockId, float posX, float posY)
     };
     touchListener->onTouchEnded = [=](Touch* touch, Event* event) {
         auto target = static_cast<DrawNode*>(event->getCurrentTarget());
-        auto blockId = (int)target->getUserData();
-        (static_cast<GameplayScene*>(target->getUserObject()))->handleMove(blockId);
+        auto slotId = (int)target->getUserData();
+        (static_cast<GameplayScene*>(target->getUserObject()))->handleMove(slotId);
     };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, node);
 
     this->addChild(node);
-    this->board.push_back(node);
+    this->boardSlots.push_back(node);
 }
 
 void GameplayScene::drawBoard(const std::vector<BlockTypeId>& blocks)
 {
-    for (size_t blockId = 0; blockId < blocks.size(); blockId++)
+    for (size_t slotId = 0; slotId < blocks.size(); slotId++)
     {
-        BlockTypeId blockTypeId = blocks[blockId];
-        this->drawBlock(blockId, blockTypeId);
+        BlockTypeId blockTypeId = blocks[slotId];
+        this->drawBlock(slotId, blockTypeId);
     }
 }
 
-void GameplayScene::drawBlock(int blockId, int blockTypeId)
+void GameplayScene::drawBlock(int slotId, int blockTypeId)
 {
     static const Color4F colors[]{ Color4F::RED, Color4F::BLUE, Color4F::GREEN, Color4F::YELLOW,
        Color4F::MAGENTA, Color4F::ORANGE };
 
     if (blockTypeId >= BlockTypeId::RED)
-        static_cast<DrawNode*>(this->board[blockId])->drawPolygon(block, 4, colors[blockTypeId], 1, colors[blockTypeId]);
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(block, 4, colors[blockTypeId], 1, colors[blockTypeId]);
     else if (blockTypeId == BlockTypeId::STRIPE)
-        static_cast<DrawNode*>(this->board[blockId])->drawPolygon(stripe, 4, Color4F::WHITE, 1, Color4F::WHITE);
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(stripe, 4, Color4F::WHITE, 1, Color4F::WHITE);
     else if (blockTypeId == BlockTypeId::BOMB)
-        static_cast<DrawNode*>(this->board[blockId])->drawDot(center, blockSize / 3, Color4F::WHITE);
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawDot(center, blockSize / 3, Color4F::WHITE);
 }
 
 void GameplayScene::destroyBlocks(const std::vector<Position>& positions)
 {
     for (const auto& pos : positions)
     {
-        auto blockId = pos.yPos * Game::WIDTH + pos.xPos;
-        static_cast<DrawNode*>(this->board[blockId])->drawPolygon(block, 4, Color4F::BLACK, 1, Color4F::BLACK);
+        auto slotId = pos.yPos * Game::WIDTH + pos.xPos;
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(block, 4, Color4F::BLACK, 1, Color4F::BLACK);
     }
 }
 
-void GameplayScene::handleMove(int blockId)
+void GameplayScene::handleMove(int slotId)
 {
-    Move move(blockId % Game::WIDTH,  blockId / Game::WIDTH);
+    Move move(slotId % Game::WIDTH,  slotId / Game::WIDTH);
     SceneDTO dto = this->game.makeMove(move);
 
     if (dto.blocksToDestroy.size() < 2) {

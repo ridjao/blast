@@ -10,15 +10,15 @@ class GameplayScene : public cocos2d::Scene
     cocos2d::Label* timer;
     cocos2d::Label* score;
     Game game;
-    std::vector<cocos2d::Node*> board;
+    std::vector<cocos2d::Node*> boardSlots;
 
     void updateTimer(float dt);
     void updateScore(int score);
-    void createBoard(int originX, int originY);
-    void createBoardSlot(int blockId, float posX, float posY);
+    void createBoard(float originX, float originY);
+    void createBoardSlot(int slotId, float posX, float posY);
     void drawBoard(const std::vector<BlockTypeId>& blocks);
-    void drawBlock(int blockId, int color);
-    void handleMove(int blockId);
+    void drawBlock(int slotId, int color);
+    void handleMove(int slotId);
     void destroyBlocks(const std::vector<Position>& positions);
     
 public:
