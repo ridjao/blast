@@ -1,10 +1,10 @@
 #include "Board.h"
 
-static std::vector<BlockTypeId> makeBlockTypeIdList(std::vector<std::vector<Block>>& grid);
+static std::vector<BlockType> makeBlockTypeIdList(std::vector<std::vector<Block>>& grid);
 
 Board::Board(int width, int height) : max(width, height) {}
 
-std::vector<BlockTypeId> Board::setup()
+std::vector<BlockType> Board::setup()
 {
 	for (int y = 0; y < this->max.yPos; y++)
 	{
@@ -23,7 +23,7 @@ std::vector<Position> Board::findBlocksToDestroy(const Position& start)
 	return grid[start.yPos][start.xPos].findBlocksToDestroy(grid);
 }
 
-std::vector<BlockTypeId> Board::replaceBlocks(const std::vector<Position>& positions)
+std::vector<BlockType> Board::replaceBlocks(const std::vector<Position>& positions)
 {
 	for (size_t i = 0; i < positions.size(); i++)
 	{
@@ -43,12 +43,12 @@ bool Board::hasLegalMoves()
 	return false;
 }
 
-static std::vector<BlockTypeId> makeBlockTypeIdList(std::vector<std::vector<Block>>& grid)
+static std::vector<BlockType> makeBlockTypeIdList(std::vector<std::vector<Block>>& grid)
 {
-	std::vector<BlockTypeId> blocks;
+	std::vector<BlockType> blocks;
 	for (size_t y = 0; y < grid.size(); y++)
 		for (size_t x = 0; x < grid[y].size(); x++)
-			blocks.push_back(grid[y][x].blockTypeId);
+			blocks.push_back(grid[y][x].getBlockType());
 
 	return blocks;
 }

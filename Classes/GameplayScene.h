@@ -16,7 +16,7 @@ class GameplayScene : public cocos2d::Scene
     void updateScore(int score);
     void createBoard(float originX, float originY);
     void createBoardSlot(int slotId, float posX, float posY);
-    void drawBoard(const std::vector<BlockTypeId>& blocks);
+    void drawBoard(const std::vector<BlockType>& blocks);
     void drawBlock(int slotId, int color);
     void handleMove(int slotId);
     void destroyBlocks(const std::vector<Position>& positions);

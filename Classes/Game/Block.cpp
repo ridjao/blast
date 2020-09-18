@@ -2,67 +2,68 @@
 #include "BlockTypeIds.h"
 #include <random>
 
-class Block::BlockImpl
+class BlockImpl
 {
 public:
+	BlockImpl(const BlockType& blockType, const Position& position) : blockType(blockType), position(position) {}
 	virtual std::vector<Position> BlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, int xPos, int yPos, int color)
 	{
-		std::vector<std::vector<BlockTypeId>> colorGrid;
+		std::vector<std::vector<BlockType>> colorGrid;
 		for (size_t y = 0; y < grid.size(); y++)
 		{
-			std::vector<BlockTypeId> row;
+			std::vector<BlockType> row;
 			for (size_t x = 0; x < grid[y].size(); x++)
-				row.push_back(grid[y][x].blockTypeId);
+				row.push_back(grid[y][x].pimpl->blockType);
 			colorGrid.push_back(row);
 		}
-		colorGrid[yPos][xPos] = BlockTypeId::MARKED_DESTROY;
+		colorGrid[yPos][xPos] = BlockType::MARKED_DESTROY;
 		return findBlocksToDestroy(grid, colorGrid, xPos, yPos, color);
 	}
 
-	std::vector<Position> BlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, std::vector<std::vector<BlockTypeId>>& colorGrid, int xPos, int yPos, int color)
+	std::vector<Position> BlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, std::vector<std::vector<BlockType>>& colorGrid, int xPos, int yPos, int color)
 	{
 		std::vector<Position> blocksToDestroy;
 
 		for (int x = xPos - 1; x >= 0; x--)
 		{
-			BlockTypeId& blockColor = colorGrid[yPos][x];
+			BlockType& blockColor = colorGrid[yPos][x];
 			if (blockColor != color)
 				break;
 			{
-				blockColor = BlockTypeId::MARKED_DESTROY;
+				blockColor = BlockType::MARKED_DESTROY;
 				blocksToDestroy.push_back(Position(x, yPos));
 			}
 		}
 
 		for (size_t x = xPos + 1; x < grid[yPos].size(); x++)
 		{
-			BlockTypeId& blockColor = colorGrid[yPos][x];
+			BlockType& blockColor = colorGrid[yPos][x];
 			if (blockColor != color)
 				break;
 			{
-				blockColor = BlockTypeId::MARKED_DESTROY;
+				blockColor = BlockType::MARKED_DESTROY;
 				blocksToDestroy.push_back(Position(x, yPos));
 			}
 		}
 
 		for (int y = yPos - 1; y >= 0; y--)
 		{
-			BlockTypeId& blockColor = colorGrid[y][xPos];
+			BlockType& blockColor = colorGrid[y][xPos];
 			if (blockColor != color)
 				break;
 			{
-				blockColor = BlockTypeId::MARKED_DESTROY;
+				blockColor = BlockType::MARKED_DESTROY;
 				blocksToDestroy.push_back(Position(xPos, y));
 			}
 		}
 
 		for (size_t y = yPos + 1; y < grid.size(); y++)
 		{
-			BlockTypeId& blockColor = colorGrid[y][xPos];
+			BlockType& blockColor = colorGrid[y][xPos];
 			if (blockColor != color)
 				break;
 			{
-				blockColor = BlockTypeId::MARKED_DESTROY;
+				blockColor = BlockType::MARKED_DESTROY;
 				blocksToDestroy.push_back(Position(xPos, y));
 			}
 		}
@@ -76,11 +77,17 @@ public:
 
 		return blocksToDestroy;
 	}
+
+private:
+	BlockType blockType;
+	Position position;
+	friend class Block;
 };
 
-class Block::StripeBlockImpl : public Block::BlockImpl
+class StripeBlockImpl : public BlockImpl
 {
 public:
+	StripeBlockImpl(const Position& position) : BlockImpl(BlockType::STRIPE, position) {}
 	virtual std::vector<Position> StripeBlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
 		int xPos, int yPos, int color)
 	{
@@ -95,9 +102,10 @@ public:
 	}
 };
 
-class Block::BombBlockImpl : public Block::BlockImpl
+class BombBlockImpl : public BlockImpl
 {
 public:
+	BombBlockImpl(const Position& position) : BlockImpl(BlockType::BOMB, position) {}
 	virtual std::vector<Position> BombBlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
 		int xPos, int yPos, int color)
 	{
@@ -130,25 +138,23 @@ static std::uniform_int_distribution<int> rollDice(0, 99);
 static std::uniform_int_distribution<int> getRandomSpecial(0, 1);
 static std::uniform_int_distribution<int> getRandomColor(0, 5);
 
-Block::Block(int xPos, int yPos) : position(xPos, yPos)
+Block::Block(int xPos, int yPos)
 {
 	if (rollDice(engine) < 5)
 	{
 		if (getRandomSpecial(engine) == 0)
 		{
-			this->blockTypeId = BlockTypeId::STRIPE;
-			this->pimpl = std::make_unique<Block::StripeBlockImpl>();
+			this->pimpl = std::make_unique<StripeBlockImpl>(Position(xPos, yPos));
 		}
 		else
 		{
-			this->blockTypeId = BlockTypeId::BOMB;
-			this->pimpl = std::make_unique<Block::BombBlockImpl>();
+			this->pimpl = std::make_unique<BombBlockImpl>(Position(xPos, yPos));
 		}
 	}
 	else
 	{
-		this->blockTypeId = static_cast<BlockTypeId>(getRandomColor(engine));
-		this->pimpl = std::make_unique<Block::BlockImpl>();
+		BlockType blockType = static_cast<BlockType>(getRandomColor(engine));
+		this->pimpl = std::make_unique<BlockImpl>(blockType, Position(xPos, yPos));
 	}
 }
 
@@ -158,8 +164,13 @@ Block& Block::operator=(Block&&) = default;
 
 std::vector<Position> Block::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid)
 {
-	std::vector<Position> blocksToDestroy = this->pimpl->findBlocksToDestroy(grid, this->position.xPos, this->position.yPos, this->blockTypeId);
+	std::vector<Position> blocksToDestroy = this->pimpl->findBlocksToDestroy(grid, this->pimpl->position.xPos, this->pimpl->position.yPos, this->pimpl->blockType);
 	if (blocksToDestroy.size() > 0)
-		blocksToDestroy.push_back(this->position);
+		blocksToDestroy.push_back(this->pimpl->position);
 	return blocksToDestroy;
+}
+
+BlockType Block::getBlockType()
+{
+	return pimpl->blockType;
 }

@@ -124,11 +124,11 @@ void GameplayScene::createBoardSlot(int slotId, float posX, float posY)
     this->boardSlots.push_back(node);
 }
 
-void GameplayScene::drawBoard(const std::vector<BlockTypeId>& blocks)
+void GameplayScene::drawBoard(const std::vector<BlockType>& blocks)
 {
     for (size_t slotId = 0; slotId < blocks.size(); slotId++)
     {
-        BlockTypeId blockTypeId = blocks[slotId];
+        BlockType blockTypeId = blocks[slotId];
         this->drawBlock(slotId, blockTypeId);
     }
 }
@@ -138,11 +138,11 @@ void GameplayScene::drawBlock(int slotId, int blockTypeId)
     static const Color4F colors[]{ Color4F::RED, Color4F::BLUE, Color4F::GREEN, Color4F::YELLOW,
        Color4F::MAGENTA, Color4F::ORANGE };
 
-    if (blockTypeId >= BlockTypeId::RED)
+    if (blockTypeId >= BlockType::RED)
         static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(block, 4, colors[blockTypeId], 1, colors[blockTypeId]);
-    else if (blockTypeId == BlockTypeId::STRIPE)
+    else if (blockTypeId == BlockType::STRIPE)
         static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(stripe, 4, Color4F::WHITE, 1, Color4F::WHITE);
-    else if (blockTypeId == BlockTypeId::BOMB)
+    else if (blockTypeId == BlockType::BOMB)
         static_cast<DrawNode*>(this->boardSlots[slotId])->drawDot(center, blockSize / 3, Color4F::WHITE);
 }
 
