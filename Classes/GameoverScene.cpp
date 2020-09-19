@@ -27,8 +27,6 @@ bool GameoverScene::init()
 
     auto scoreLabel = Label::createWithTTF("Score: " + std::to_string(GameoverScene::score), "fonts/Marker Felt.ttf", fontSize);
     scoreLabel->setAnchorPoint(Vec2(0, 0));
-    scoreLabel->setHorizontalAlignment(TextHAlignment::LEFT);
-    scoreLabel->setVerticalAlignment(TextVAlignment::BOTTOM);
     scoreLabel->setPosition(Vec2(origin.x + xMargin,
         origin.y + visibleSize.height - scoreLabel->getContentSize().height - yMargin));
     this->addChild(scoreLabel, 1);
@@ -41,8 +39,6 @@ bool GameoverScene::init()
     }
     auto highscoreLabel = Label::createWithTTF("Highscore: " + std::to_string(highscore), "fonts/Marker Felt.ttf", fontSize);
     highscoreLabel->setAnchorPoint(Vec2(0, 0));
-    highscoreLabel->setHorizontalAlignment(TextHAlignment::LEFT);
-    highscoreLabel->setVerticalAlignment(TextVAlignment::BOTTOM);
     highscoreLabel->setPosition(Vec2(origin.x + xMargin,
         origin.y + visibleSize.height - scoreLabel->getContentSize().height - highscoreLabel->getContentSize().height - yMargin));
     this->addChild(highscoreLabel, 1);

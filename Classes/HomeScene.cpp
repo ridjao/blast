@@ -25,8 +25,6 @@ bool HomeScene::init()
     auto highscore = def->getIntegerForKey("Highscore");
     auto highscoreLabel = Label::createWithTTF("Highscore: " + std::to_string(highscore), "fonts/Marker Felt.ttf", fontSize);
     highscoreLabel->setAnchorPoint(Vec2(0, 0));
-    highscoreLabel->setHorizontalAlignment(TextHAlignment::LEFT);
-    highscoreLabel->setVerticalAlignment(TextVAlignment::BOTTOM);
     highscoreLabel->setPosition(Vec2(origin.x + xMargin,
         origin.y + visibleSize.height - highscoreLabel->getContentSize().height - yMargin));
     this->addChild(highscoreLabel, 1);

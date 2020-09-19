@@ -1,3 +1,4 @@
+#include <chrono>
 #include "GameplayScene.h"
 #include "GameoverScene.h"
 #include "Game/SceneDTO.h"
@@ -8,9 +9,23 @@ static const int blockSize = 50;
 static const Vec2 block[]{ Vec2(0, 0), Vec2(0, blockSize), Vec2(blockSize, blockSize), Vec2(blockSize, 0) };
 static const Vec2 stripe[]{ Vec2(0, blockSize - 30), Vec2(0, blockSize - 20), Vec2(blockSize, blockSize - 20), Vec2(blockSize, blockSize - 30) };
 static const Vec2 center{ blockSize/2, blockSize / 2 };
+static const float fontSize = 24.0f;
+static const std::string fontFilePath = "fonts/Marker Felt.ttf";
+
+static auto timeHitsSet = std::chrono::steady_clock::now();
+
+static Size visibleSize;
+static Vec2 origin;
+static float xMargin;
+static float yMargin;
 
 Scene* GameplayScene::createScene()
 {
+    visibleSize = Director::getInstance()->getVisibleSize();
+    origin = Director::getInstance()->getVisibleOrigin();
+    xMargin = visibleSize.width / 64;
+    yMargin = visibleSize.height / 64;
+
     return GameplayScene::create();
 }
 
@@ -21,26 +36,17 @@ bool GameplayScene::init()
         return false;
     }
 
-    auto visibleSize = Director::getInstance()->getVisibleSize();
-    Vec2 origin = Director::getInstance()->getVisibleOrigin();
-    auto fontSize = 24.0f;
-    auto xMargin = visibleSize.width / 64;
-    auto yMargin = visibleSize.height / 64;
-
-    this->score = Label::createWithTTF("Score: 0", "fonts/Marker Felt.ttf", fontSize);
+    this->score = Label::createWithTTF("Score: 0", fontFilePath, fontSize);
     this->score->setAnchorPoint(Vec2(0, 0));
-    this->score->setHorizontalAlignment(TextHAlignment::LEFT);
-    this->score->setVerticalAlignment(TextVAlignment::BOTTOM);
     this->score->setPosition(Vec2(origin.x + xMargin,
         origin.y + visibleSize.height - this->score->getContentSize().height - yMargin));
     this->addChild(this->score, 1);
 
     this->timeLeft = 120;
-    this->timer = Label::createWithTTF("Time: " + std::to_string(this->timeLeft), "fonts/Marker Felt.ttf", fontSize);
+    this->timer = Label::createWithTTF("Time: " + std::to_string(this->timeLeft), fontFilePath, fontSize);
     this->timer->setAnchorPoint(Vec2(0, 0));
-    this->timer->setPosition(Vec2(origin.x + visibleSize.width - this->timer->getContentSize().width - xMargin,
-        origin.y + visibleSize.height - this->timer->getContentSize().height - yMargin));
-    this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::updateTimer), 1.0f);
+    this->setTimerPosition();
+    this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
     this->addChild(this->timer, 1);
 
     auto boardOriginX = visibleSize.width / 2 - (blockSize * Game::WIDTH + 0.2f * blockSize * (Game::WIDTH - 1)) / 2;
@@ -49,10 +55,27 @@ bool GameplayScene::init()
     SceneDTO dto = this->game.start();
     this->drawBoard(dto.boardBlocks);
 
+    this->hits = Label::createWithTTF("", fontFilePath, fontSize + 10);
+    this->hits->setAnchorPoint(Vec2(0, 0));
+    this->setHitsPosition();
+    this->addChild(this->hits, 1);
+
     return true;
 }
 
-void GameplayScene::updateTimer(float dt)
+void GameplayScene::setTimerPosition()
+{
+    this->timer->setPosition(Vec2(origin.x + visibleSize.width - this->timer->getContentSize().width - xMargin,
+        origin.y + visibleSize.height - this->timer->getContentSize().height - yMargin));
+}
+
+void GameplayScene::runPeriodicTasks(float dt)
+{
+    this->updateTimer();
+    this->clearHits();
+}
+
+void GameplayScene::updateTimer()
 {
     if (--this->timeLeft <= 0)
     {
@@ -60,18 +83,12 @@ void GameplayScene::updateTimer(float dt)
         return;
     }
 
-    auto timeLeftStr = std::to_string(this->timeLeft);
-    auto timeWidth = timeLeftStr.length();
-    this->timer->setString("Time: " + timeLeftStr);
+    this->timer->setString("Time: " + std::to_string(this->timeLeft));
+    auto timeWidth = this->timer->getContentSize().width;
     static auto prevTimeWidth = timeWidth;
     if (prevTimeWidth != timeWidth)
     {
-        auto visibleSize = Director::getInstance()->getVisibleSize();
-        Vec2 origin = Director::getInstance()->getVisibleOrigin();
-        auto xMargin = visibleSize.width / 64;
-        auto yMargin = visibleSize.height / 64;
-        this->timer->setPosition(Vec2(origin.x + visibleSize.width - this->timer->getContentSize().width - xMargin,
-            origin.y + visibleSize.height - this->timer->getContentSize().height - yMargin));
+        this->setTimerPosition();
         prevTimeWidth = timeWidth;
     }
 }
@@ -146,6 +163,29 @@ void GameplayScene::drawBlock(int slotId, int blockTypeId)
         static_cast<DrawNode*>(this->boardSlots[slotId])->drawDot(center, blockSize / 3, Color4F::WHITE);
 }
 
+void GameplayScene::setHitsPosition()
+{
+    this->hits->setPosition(Vec2((origin.x + visibleSize.width - this->hits->getContentSize().width)/2,
+        origin.y + visibleSize.height - 2*this->hits->getContentSize().height - yMargin));
+}
+
+void GameplayScene::displayHits(int hits)
+{
+    this->hits->setString(std::to_string(hits) + " hits!");
+    this->setHitsPosition();
+    timeHitsSet = std::chrono::steady_clock::now();
+}
+
+void GameplayScene::clearHits()
+{
+    std::chrono::duration<double> elapsedSeconds = std::chrono::steady_clock::now() - timeHitsSet;
+    if (elapsedSeconds.count() >= 1)
+    {
+        this->hits->setString("");
+        this->setHitsPosition();
+    }
+}
+
 void GameplayScene::destroyBlocks(const std::vector<Position>& positions)
 {
     for (const auto& pos : positions)
@@ -169,10 +209,12 @@ void GameplayScene::handleMove(int slotId)
     CallFunc* destroyBlocks = CallFunc::create([=]() {
         this->destroyBlocks(dto.blocksToDestroy);
         this->updateScore(dto.score);
+        this->displayHits(dto.blocksToDestroy.size());
         this->timeLeft += dto.timeIncrement; });
 
     CallFunc* drawBlocks = CallFunc::create([=]() {
-        this->drawBoard(dto.boardBlocks); });
+        this->drawBoard(dto.boardBlocks);
+        });
 
     this->runAction(Sequence::create(destroyBlocks, DelayTime::create(0.05f), drawBlocks, nullptr));
 }
