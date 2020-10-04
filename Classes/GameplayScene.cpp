@@ -5,7 +5,7 @@
 
 USING_NS_CC;
 
-static const int blockSize = 50;
+static const int blockSize = 40;
 static const Vec2 block[]{ Vec2(0, 0), Vec2(0, blockSize), Vec2(blockSize, blockSize), Vec2(blockSize, 0) };
 static const Vec2 stripe[]{ Vec2(0, blockSize - 30), Vec2(0, blockSize - 20), Vec2(blockSize, blockSize - 20), Vec2(blockSize, blockSize - 30) };
 static const Vec2 center{ blockSize/2, blockSize / 2 };
@@ -49,8 +49,8 @@ bool GameplayScene::init()
     this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
     this->addChild(this->timer, 1);
 
-    auto boardOriginX = visibleSize.width / 2 - (blockSize * Game::WIDTH + 0.2f * blockSize * (Game::WIDTH - 1)) / 2;
-    auto boardOriginY = visibleSize.height / 2 - (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
+    auto boardOriginX = origin.x + visibleSize.width / 2 - (blockSize * Game::WIDTH + 0.2f * blockSize * (Game::WIDTH - 1)) / 2;
+    auto boardOriginY = origin.y + visibleSize.height / 2 - (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
     this->createBoard(boardOriginX, boardOriginY);
     SceneDTO dto = this->game.start();
     this->drawBoard(dto.boardBlocks);
@@ -112,10 +112,14 @@ void GameplayScene::createBoard(float originX, float originY)
 
 void GameplayScene::createBoardSlot(int slotId, float posX, float posY)
 {
+    static int slots[Game::HEIGHT * Game::WIDTH];
+    slots[slotId] = slotId;
+
     auto node = DrawNode::create();
+    node->setAnchorPoint(Vec2(0, 0));
     node->setPosition(posX, posY);
     node->setContentSize(Size(blockSize, blockSize));
-    node->setUserData((void*)slotId);
+    node->setUserData(slots+slotId);
     node->setUserObject(this);
 
     auto touchListener = EventListenerTouchOneByOne::create();
@@ -132,7 +136,7 @@ void GameplayScene::createBoardSlot(int slotId, float posX, float posY)
     };
     touchListener->onTouchEnded = [=](Touch* touch, Event* event) {
         auto target = static_cast<DrawNode*>(event->getCurrentTarget());
-        auto slotId = (int)target->getUserData();
+        auto slotId = *(reinterpret_cast<int*>(target->getUserData()));
         (static_cast<GameplayScene*>(target->getUserObject()))->handleMove(slotId);
     };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, node);
@@ -152,8 +156,14 @@ void GameplayScene::drawBoard(const std::vector<BlockType>& blocks)
 
 void GameplayScene::drawBlock(int slotId, int blockTypeId)
 {
-    static const Color4F colors[]{ Color4F::RED, Color4F::BLUE, Color4F::GREEN, Color4F::YELLOW,
-       Color4F::MAGENTA, Color4F::ORANGE };
+    Color4F pastelRed    (Color4B(255, 102,  99, 255));
+    Color4F pastelBlue   (Color4B(158, 193, 207, 255));
+    Color4F pastelGreen  (Color4B(158, 224, 158, 255));
+    Color4F pastelYellow (Color4B(253, 253, 151, 255));
+    Color4F pastelViolet (Color4B(204, 153, 201, 255));
+    Color4F pastelOrange (Color4B(254, 177,  68, 255));
+
+    static const Color4F colors[]{ pastelRed, pastelBlue, pastelGreen, pastelYellow, pastelViolet, pastelOrange };
 
     if (blockTypeId >= BlockType::RED)
         static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(block, 4, colors[blockTypeId], 1, colors[blockTypeId]);
@@ -165,8 +175,9 @@ void GameplayScene::drawBlock(int slotId, int blockTypeId)
 
 void GameplayScene::setHitsPosition()
 {
-    this->hits->setPosition(Vec2((origin.x + visibleSize.width - this->hits->getContentSize().width)/2,
-        origin.y + visibleSize.height - 2*this->hits->getContentSize().height - yMargin));
+    auto boardEndY = origin.y + visibleSize.height / 2 + (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
+    this->hits->setPosition(Vec2(origin.x + (visibleSize.width - this->hits->getContentSize().width)/2,
+        boardEndY + origin.y + (visibleSize.height - boardEndY - this->hits->getContentSize().height)/2));
 }
 
 void GameplayScene::displayHits(int hits)

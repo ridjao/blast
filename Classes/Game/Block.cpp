@@ -2,11 +2,44 @@
 #include "BlockTypeIds.h"
 #include <random>
 
+#if ! defined(_WINDOWS)
+namespace std {
+    template<class T> struct _Unique_if {
+        typedef unique_ptr<T> _Single_object;
+    };
+
+    template<class T> struct _Unique_if<T[]> {
+        typedef unique_ptr<T[]> _Unknown_bound;
+    };
+
+    template<class T, size_t N> struct _Unique_if<T[N]> {
+        typedef void _Known_bound;
+    };
+
+    template<class T, class... Args>
+        typename _Unique_if<T>::_Single_object
+        make_unique(Args&&... args) {
+            return unique_ptr<T>(new T(std::forward<Args>(args)...));
+        }
+
+    template<class T>
+        typename _Unique_if<T>::_Unknown_bound
+        make_unique(size_t n) {
+            typedef typename remove_extent<T>::type U;
+            return unique_ptr<T>(new U[n]());
+        }
+
+    template<class T, class... Args>
+        typename _Unique_if<T>::_Known_bound
+        make_unique(Args&&...) = delete;
+}
+#endif
+
 class BlockImpl
 {
 public:
 	BlockImpl(const BlockType& blockType, const Position& position) : blockType(blockType), position(position) {}
-	virtual std::vector<Position> BlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, int xPos, int yPos, int color)
+	virtual std::vector<Position> findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, int xPos, int yPos, int color)
 	{
 		std::vector<std::vector<BlockType>> colorGrid;
 		for (size_t y = 0; y < grid.size(); y++)
@@ -20,7 +53,7 @@ public:
 		return findBlocksToDestroy(grid, colorGrid, xPos, yPos, color);
 	}
 
-	std::vector<Position> BlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, std::vector<std::vector<BlockType>>& colorGrid, int xPos, int yPos, int color)
+	std::vector<Position> findBlocksToDestroy(const std::vector<std::vector<Block>>& grid, std::vector<std::vector<BlockType>>& colorGrid, int xPos, int yPos, int color)
 	{
 		std::vector<Position> blocksToDestroy;
 
@@ -88,7 +121,7 @@ class StripeBlockImpl : public BlockImpl
 {
 public:
 	StripeBlockImpl(const Position& position) : BlockImpl(BlockType::STRIPE, position) {}
-	virtual std::vector<Position> StripeBlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
+	virtual std::vector<Position> findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
 		int xPos, int yPos, int color)
 	{
 		std::vector<Position> blocksToDestroy;
@@ -106,7 +139,7 @@ class BombBlockImpl : public BlockImpl
 {
 public:
 	BombBlockImpl(const Position& position) : BlockImpl(BlockType::BOMB, position) {}
-	virtual std::vector<Position> BombBlockImpl::findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
+	virtual std::vector<Position> findBlocksToDestroy(const std::vector<std::vector<Block>>& grid,
 		int xPos, int yPos, int color)
 	{
 		std::vector<Position> blocksToDestroy;
@@ -174,3 +207,4 @@ BlockType Block::getBlockType()
 {
 	return pimpl->blockType;
 }
+

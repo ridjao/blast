@@ -10,7 +10,7 @@ class Game
 	void updateScore(int destroyedBlocks);
 	int computeTimeIncrement(int destroyedBlocks);
 public:
-	Game::Game();
+	Game();
 	SceneDTO start();
 	SceneDTO makeMove(const Move& move);
 	bool hasLegalMoves();

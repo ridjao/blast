@@ -4,6 +4,7 @@
 #include "Position.h"
 #include "BlockTypeIds.h"
 
+class BlockImpl;
 class Block
 {
 public:
