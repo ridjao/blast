@@ -10,9 +10,11 @@ class Board
 	std::vector<std::vector<Block>> grid;
 public:
 	Board(int width, int height);
-	std::vector<BlockType> setup();
+	void setup();
+	void clear();
+	void replaceBlocks(const std::vector<Position>& positions);
 	std::vector<Position> findBlocksToDestroy(const Position& start);
-	std::vector<BlockType> replaceBlocks(const std::vector<Position>& positions);
+	std::vector<BlockType> getBlocks();
 	bool hasLegalMoves();
 };
 

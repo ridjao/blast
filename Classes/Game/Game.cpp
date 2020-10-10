@@ -7,26 +7,26 @@ bool Game::hasLegalMoves()
 	return board.hasLegalMoves();
 }
 
-SceneDTO Game::makeMove(const Move& move)
+std::vector<Position> Game::makeMove(const Move& move)
 {
-	SceneDTO dto;
-	dto.blocksToDestroy = board.findBlocksToDestroy(move);
-	if (dto.blocksToDestroy.size() > 1)
+	std::vector<Position> blocksToDestroy = board.findBlocksToDestroy(move);
+	if (blocksToDestroy.size() > 1)
 	{
-		dto.boardBlocks = board.replaceBlocks(dto.blocksToDestroy);
-		this->updateScore(dto.blocksToDestroy.size());
-		dto.score = this->score;
-		dto.timeIncrement = this->computeTimeIncrement(dto.blocksToDestroy.size());
+		board.replaceBlocks(blocksToDestroy);
+		this->updateScore(blocksToDestroy.size());
 	}
-	return dto;
+	return blocksToDestroy;
 }
 
-SceneDTO Game::start()
+void Game::start()
 {
 	this->score = 0;
-	SceneDTO dto;
-	dto.boardBlocks = board.setup();
-	return dto;
+	board.setup();
+}
+
+void Game::end()
+{
+	board.clear();
 }
 
 void Game::updateScore(int destroyedBlocks)
@@ -42,4 +42,9 @@ int Game::computeTimeIncrement(int destroyedBlocks)
 int Game::getScore()
 {
 	return this->score;
+}
+
+std::vector<BlockType> Game::getBoardBlocks()
+{
+	return board.getBlocks();
 }

@@ -4,7 +4,7 @@ static std::vector<BlockType> makeBlockTypeIdList(std::vector<std::vector<Block>
 
 Board::Board(int width, int height) : max(width, height) {}
 
-std::vector<BlockType> Board::setup()
+void Board::setup()
 {
 	for (int y = 0; y < this->max.yPos; y++)
 	{
@@ -15,7 +15,11 @@ std::vector<BlockType> Board::setup()
 		}
 		grid.push_back(std::move(row));
 	}
-	return makeBlockTypeIdList(grid);
+}
+
+void Board::clear()
+{
+	grid.clear();
 }
 
 std::vector<Position> Board::findBlocksToDestroy(const Position& start)
@@ -23,7 +27,7 @@ std::vector<Position> Board::findBlocksToDestroy(const Position& start)
 	return grid[start.yPos][start.xPos].findBlocksToDestroy(grid);
 }
 
-std::vector<BlockType> Board::replaceBlocks(const std::vector<Position>& positions)
+void Board::replaceBlocks(const std::vector<Position>& positions)
 {
 	for (size_t i = 0; i < positions.size(); i++)
 	{
@@ -31,6 +35,10 @@ std::vector<BlockType> Board::replaceBlocks(const std::vector<Position>& positio
 		int yPos = positions[i].yPos;
 		grid[yPos][xPos] = Block(xPos, yPos);
 	}
+}
+
+std::vector<BlockType> Board::getBlocks()
+{
 	return makeBlockTypeIdList(grid);
 }
 

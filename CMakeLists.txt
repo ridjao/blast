@@ -74,7 +74,6 @@ list(APPEND GAME_HEADER
      Classes/Game/Game.h
      Classes/Game/BlockTypeIds.h
      Classes/Game/Position.h
-     Classes/Game/SceneDTO.h
      )
 
 if(ANDROID)

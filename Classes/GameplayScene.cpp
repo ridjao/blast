@@ -1,7 +1,6 @@
 #include <chrono>
 #include "GameplayScene.h"
 #include "GameoverScene.h"
-#include "Game/SceneDTO.h"
 
 USING_NS_CC;
 
@@ -12,12 +11,21 @@ static const Vec2 center{ blockSize/2, blockSize / 2 };
 static const float fontSize = 24.0f;
 static const std::string fontFilePath = "fonts/Marker Felt.ttf";
 
+static const int INITIAL_TIME = 120;
+static const int REFRESH_TICKS = 60;
+
 static auto timeHitsSet = std::chrono::steady_clock::now();
+static auto gameover = false;
 
 static Size visibleSize;
 static Vec2 origin;
 static float xMargin;
 static float yMargin;
+
+static std::mutex sceneLock;
+
+int GameplayScene::timeLeft;
+Game GameplayScene::game;
 
 Scene* GameplayScene::createScene()
 {
@@ -36,55 +44,71 @@ bool GameplayScene::init()
         return false;
     }
 
-    this->score = Label::createWithTTF("Score: 0", fontFilePath, fontSize);
-    this->score->setAnchorPoint(Vec2(0, 0));
-    this->score->setPosition(Vec2(origin.x + xMargin,
-        origin.y + visibleSize.height - this->score->getContentSize().height - yMargin));
-    this->addChild(this->score, 1);
-
-    this->timeLeft = 120;
-    this->timer = Label::createWithTTF("Time: " + std::to_string(this->timeLeft), fontFilePath, fontSize);
-    this->timer->setAnchorPoint(Vec2(0, 0));
-    this->setTimerPosition();
-    this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
-    this->addChild(this->timer, 1);
-
     auto boardOriginX = origin.x + visibleSize.width / 2 - (blockSize * Game::WIDTH + 0.2f * blockSize * (Game::WIDTH - 1)) / 2;
     auto boardOriginY = origin.y + visibleSize.height / 2 - (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
     this->createBoard(boardOriginX, boardOriginY);
-    SceneDTO dto = this->game.start();
-    this->drawBoard(dto.boardBlocks);
+    auto gameStarted = !GameplayScene::game.getBoardBlocks().empty();
+    if (!gameStarted)
+    {
+        GameplayScene::timeLeft = INITIAL_TIME;
+        GameplayScene::game.start();
+        gameover = false;
+    }
+    this->drawBoard(GameplayScene::game.getBoardBlocks());
 
-    this->hits = Label::createWithTTF("", fontFilePath, fontSize + 10);
-    this->hits->setAnchorPoint(Vec2(0, 0));
+    this->scoreDisplay = Label::createWithTTF("Score: " + std::to_string(GameplayScene::game.getScore()), fontFilePath, fontSize);
+    this->scoreDisplay->setAnchorPoint(Vec2(0, 0));
+    this->scoreDisplay->setPosition(Vec2(origin.x + xMargin,
+        origin.y + visibleSize.height - this->scoreDisplay->getContentSize().height - yMargin));
+    this->addChild(this->scoreDisplay, 1);
+
+    this->timerDisplay = Label::createWithTTF("Time: " + std::to_string(GameplayScene::timeLeft), fontFilePath, fontSize);
+    this->timerDisplay->setAnchorPoint(Vec2(0, 0));
+    this->setTimerPosition();
+    this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
+    this->addChild(this->timerDisplay, 1);
+
+    this->hitsDisplay = Label::createWithTTF("", fontFilePath, fontSize + 10);
+    this->hitsDisplay->setAnchorPoint(Vec2(0, 0));
     this->setHitsPosition();
-    this->addChild(this->hits, 1);
+    this->addChild(this->hitsDisplay, 1);
 
     return true;
 }
 
 void GameplayScene::setTimerPosition()
 {
-    this->timer->setPosition(Vec2(origin.x + visibleSize.width - this->timer->getContentSize().width - xMargin,
-        origin.y + visibleSize.height - this->timer->getContentSize().height - yMargin));
+    this->timerDisplay->setPosition(Vec2(origin.x + visibleSize.width - this->timerDisplay->getContentSize().width - xMargin,
+        origin.y + visibleSize.height - this->timerDisplay->getContentSize().height - yMargin));
 }
 
 void GameplayScene::runPeriodicTasks(float dt)
 {
+    const std::lock_guard<std::mutex> lock(sceneLock);
+
     this->updateTimer();
     this->clearHits();
+
+    // cocos2d-x grinds to a halt after a while of drawing and re-drawing polygons,
+    // so refresh the scene after so many ticks
+    static int ticks = 0;
+    if (!gameover && !(++ticks % REFRESH_TICKS)) {
+        Director::getInstance()->replaceScene(GameplayScene::createScene());
+    }
 }
 
 void GameplayScene::updateTimer()
 {
-    if (--this->timeLeft <= 0)
+    if (--GameplayScene::timeLeft <= 0)
     {
-        Director::getInstance()->replaceScene(GameoverScene::createScene(this->game.getScore()));
+        gameover = true;
+        GameplayScene::game.end();
+        Director::getInstance()->replaceScene(GameoverScene::createScene(GameplayScene::game.getScore()));
         return;
     }
 
-    this->timer->setString("Time: " + std::to_string(this->timeLeft));
-    auto timeWidth = this->timer->getContentSize().width;
+    this->timerDisplay->setString("Time: " + std::to_string(this->timeLeft));
+    auto timeWidth = this->timerDisplay->getContentSize().width;
     static auto prevTimeWidth = timeWidth;
     if (prevTimeWidth != timeWidth)
     {
@@ -95,7 +119,7 @@ void GameplayScene::updateTimer()
 
 void GameplayScene::updateScore(int score)
 {
-    this->score->setString("Score: " + std::to_string(score));
+    this->scoreDisplay->setString("Score: " + std::to_string(score));
 }
 
 void GameplayScene::createBoard(float originX, float originY)
@@ -139,7 +163,7 @@ void GameplayScene::createBoardSlot(int slotId, float posX, float posY)
         auto slotId = *(reinterpret_cast<int*>(target->getUserData()));
         (static_cast<GameplayScene*>(target->getUserObject()))->handleMove(slotId);
     };
-    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, node);
+    this->_eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, node);
 
     this->addChild(node);
     this->boardSlots.push_back(node);
@@ -176,13 +200,13 @@ void GameplayScene::drawBlock(int slotId, int blockTypeId)
 void GameplayScene::setHitsPosition()
 {
     auto boardEndY = origin.y + visibleSize.height / 2 + (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
-    this->hits->setPosition(Vec2(origin.x + (visibleSize.width - this->hits->getContentSize().width)/2,
-        boardEndY + origin.y + (visibleSize.height - boardEndY - this->hits->getContentSize().height)/2));
+    this->hitsDisplay->setPosition(Vec2(origin.x + (visibleSize.width - this->hitsDisplay->getContentSize().width)/2,
+        boardEndY + origin.y + (visibleSize.height - boardEndY - this->hitsDisplay->getContentSize().height)/2));
 }
 
 void GameplayScene::displayHits(int hits)
 {
-    this->hits->setString(std::to_string(hits) + " hits!");
+    this->hitsDisplay->setString(std::to_string(hits) + " hits!");
     this->setHitsPosition();
     timeHitsSet = std::chrono::steady_clock::now();
 }
@@ -192,7 +216,7 @@ void GameplayScene::clearHits()
     std::chrono::duration<double> elapsedSeconds = std::chrono::steady_clock::now() - timeHitsSet;
     if (elapsedSeconds.count() >= 1)
     {
-        this->hits->setString("");
+        this->hitsDisplay->setString("");
         this->setHitsPosition();
     }
 }
@@ -208,23 +232,30 @@ void GameplayScene::destroyBlocks(const std::vector<Position>& positions)
 
 void GameplayScene::handleMove(int slotId)
 {
-    Move move(slotId % Game::WIDTH,  slotId / Game::WIDTH);
-    SceneDTO dto = this->game.makeMove(move);
+    const std::lock_guard<std::mutex> lock(sceneLock);
 
-    if (dto.blocksToDestroy.size() < 2) {
-        if (!this->game.hasLegalMoves())
-            Director::getInstance()->replaceScene(GameoverScene::createScene(this->game.getScore()));
+    Move move(slotId % Game::WIDTH,  slotId / Game::WIDTH);
+    std::vector<Position> blocksToDestroy = GameplayScene::game.makeMove(move);
+
+    if (blocksToDestroy.size() < 2)
+    {
+        if (!GameplayScene::game.hasLegalMoves())
+        {
+            gameover = true;
+            GameplayScene::game.end();
+            Director::getInstance()->replaceScene(GameoverScene::createScene(GameplayScene::game.getScore()));
+        }
         return;
     }
 
     CallFunc* destroyBlocks = CallFunc::create([=]() {
-        this->destroyBlocks(dto.blocksToDestroy);
-        this->updateScore(dto.score);
-        this->displayHits(dto.blocksToDestroy.size());
-        this->timeLeft += dto.timeIncrement; });
+        this->destroyBlocks(blocksToDestroy);
+        this->updateScore(GameplayScene::game.getScore());
+        this->displayHits(blocksToDestroy.size());
+        this->timeLeft += GameplayScene::game.computeTimeIncrement(blocksToDestroy.size()); });
 
     CallFunc* drawBlocks = CallFunc::create([=]() {
-        this->drawBoard(dto.boardBlocks);
+        this->drawBoard(GameplayScene::game.getBoardBlocks());
         });
 
     this->runAction(Sequence::create(destroyBlocks, DelayTime::create(0.05f), drawBlocks, nullptr));

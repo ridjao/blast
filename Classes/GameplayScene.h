@@ -6,12 +6,13 @@
 
 class GameplayScene : public cocos2d::Scene
 {
-    Game game;
+    static Game game;
+    static int timeLeft;
+
     std::vector<cocos2d::Node*> boardSlots;
-    cocos2d::Label* timer;
-    cocos2d::Label* score;
-    cocos2d::Label* hits;
-    int timeLeft;
+    cocos2d::Label* timerDisplay;
+    cocos2d::Label* scoreDisplay;
+    cocos2d::Label* hitsDisplay;    
 
     void runPeriodicTasks(float dt);
     void updateTimer();
