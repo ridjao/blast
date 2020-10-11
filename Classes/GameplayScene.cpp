@@ -4,10 +4,6 @@
 
 USING_NS_CC;
 
-static const int blockSize = 40;
-static const Vec2 block[]{ Vec2(0, 0), Vec2(0, blockSize), Vec2(blockSize, blockSize), Vec2(blockSize, 0) };
-static const Vec2 stripe[]{ Vec2(0, blockSize - 30), Vec2(0, blockSize - 20), Vec2(blockSize, blockSize - 20), Vec2(blockSize, blockSize - 30) };
-static const Vec2 center{ blockSize/2, blockSize / 2 };
 static const float fontSize = 24.0f;
 static const std::string fontFilePath = "fonts/Marker Felt.ttf";
 
@@ -17,11 +13,6 @@ static const int REFRESH_TICKS = 60;
 static auto timeHitsSet = std::chrono::steady_clock::now();
 static auto gameover = false;
 
-static Size visibleSize;
-static Vec2 origin;
-static float xMargin;
-static float yMargin;
-
 static std::mutex sceneLock;
 
 int GameplayScene::timeLeft;
@@ -29,11 +20,6 @@ Game GameplayScene::game;
 
 Scene* GameplayScene::createScene()
 {
-    visibleSize = Director::getInstance()->getVisibleSize();
-    origin = Director::getInstance()->getVisibleOrigin();
-    xMargin = visibleSize.width / 64;
-    yMargin = visibleSize.height / 64;
-
     return GameplayScene::create();
 }
 
@@ -44,8 +30,8 @@ bool GameplayScene::init()
         return false;
     }
 
-    auto boardOriginX = origin.x + visibleSize.width / 2 - (blockSize * Game::WIDTH + 0.2f * blockSize * (Game::WIDTH - 1)) / 2;
-    auto boardOriginY = origin.y + visibleSize.height / 2 - (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
+    auto boardOriginX = screen.origin.x + screen.visibleSize.width / 2 - (screen.blockSize * Game::WIDTH + 0.2f * screen.blockSize * (Game::WIDTH - 1)) / 2;
+    auto boardOriginY = screen.origin.y + screen.visibleSize.height / 2 - (screen.blockSize * Game::HEIGHT + 0.2f * screen.blockSize * (Game::HEIGHT - 1)) / 2;
     this->createBoard(boardOriginX, boardOriginY);
     auto gameStarted = !GameplayScene::game.getBoardBlocks().empty();
     if (!gameStarted)
@@ -58,8 +44,8 @@ bool GameplayScene::init()
 
     this->scoreDisplay = Label::createWithTTF("Score: " + std::to_string(GameplayScene::game.getScore()), fontFilePath, fontSize);
     this->scoreDisplay->setAnchorPoint(Vec2(0, 0));
-    this->scoreDisplay->setPosition(Vec2(origin.x + xMargin,
-        origin.y + visibleSize.height - this->scoreDisplay->getContentSize().height - yMargin));
+    this->scoreDisplay->setPosition(Vec2(screen.origin.x + screen.xMargin,
+        screen.origin.y + screen.visibleSize.height - this->scoreDisplay->getContentSize().height - screen.yMargin));
     this->addChild(this->scoreDisplay, 1);
 
     this->timerDisplay = Label::createWithTTF("Time: " + std::to_string(GameplayScene::timeLeft), fontFilePath, fontSize);
@@ -78,8 +64,8 @@ bool GameplayScene::init()
 
 void GameplayScene::setTimerPosition()
 {
-    this->timerDisplay->setPosition(Vec2(origin.x + visibleSize.width - this->timerDisplay->getContentSize().width - xMargin,
-        origin.y + visibleSize.height - this->timerDisplay->getContentSize().height - yMargin));
+    this->timerDisplay->setPosition(Vec2(screen.origin.x + screen.visibleSize.width - this->timerDisplay->getContentSize().width - screen.xMargin,
+        screen.origin.y + screen.visibleSize.height - this->timerDisplay->getContentSize().height - screen.yMargin));
 }
 
 void GameplayScene::runPeriodicTasks(float dt)
@@ -129,7 +115,7 @@ void GameplayScene::createBoard(float originX, float originY)
         for (int x = 0; x < Game::WIDTH; x++)
         {
             int slotId = y * Game::WIDTH + x;
-            this->createBoardSlot(slotId, originX + 1.2f * blockSize * x, originY + 1.2f * blockSize * y);
+            this->createBoardSlot(slotId, originX + 1.2f * screen.blockSize * x, originY + 1.2f * screen.blockSize * y);
         }
     }
 }
@@ -142,7 +128,7 @@ void GameplayScene::createBoardSlot(int slotId, float posX, float posY)
     auto node = DrawNode::create();
     node->setAnchorPoint(Vec2(0, 0));
     node->setPosition(posX, posY);
-    node->setContentSize(Size(blockSize, blockSize));
+    node->setContentSize(Size(screen.blockSize, screen.blockSize));
     node->setUserData(slots+slotId);
     node->setUserObject(this);
 
@@ -151,7 +137,7 @@ void GameplayScene::createBoardSlot(int slotId, float posX, float posY)
         auto target = event->getCurrentTarget();
         Point locationInNode = target->convertToNodeSpace(touch->getLocation());
         Size s = target->getContentSize();
-        Rect rect = Rect(0, 0, s.width, s.height);
+        Rect rect{ 0, 0, s.width, s.height };
         if (rect.containsPoint(locationInNode))
         {
             return true;
@@ -190,18 +176,18 @@ void GameplayScene::drawBlock(int slotId, int blockTypeId)
     static const Color4F colors[]{ pastelRed, pastelBlue, pastelGreen, pastelYellow, pastelViolet, pastelOrange };
 
     if (blockTypeId >= BlockType::RED)
-        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(block, 4, colors[blockTypeId], 1, colors[blockTypeId]);
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(screen.block, 4, colors[blockTypeId], 1, colors[blockTypeId]);
     else if (blockTypeId == BlockType::STRIPE)
-        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(stripe, 4, Color4F::WHITE, 1, Color4F::WHITE);
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(screen.stripe, 4, Color4F::WHITE, 1, Color4F::WHITE);
     else if (blockTypeId == BlockType::BOMB)
-        static_cast<DrawNode*>(this->boardSlots[slotId])->drawDot(center, blockSize / 3, Color4F::WHITE);
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawDot(screen.center, screen.blockSize / 3, Color4F::WHITE);
 }
 
 void GameplayScene::setHitsPosition()
 {
-    auto boardEndY = origin.y + visibleSize.height / 2 + (blockSize * Game::HEIGHT + 0.2f * blockSize * (Game::HEIGHT - 1)) / 2;
-    this->hitsDisplay->setPosition(Vec2(origin.x + (visibleSize.width - this->hitsDisplay->getContentSize().width)/2,
-        boardEndY + origin.y + (visibleSize.height - boardEndY - this->hitsDisplay->getContentSize().height)/2));
+    auto boardEndY = screen.origin.y + screen.visibleSize.height / 2 + (screen.blockSize * Game::HEIGHT + 0.2f * screen.blockSize * (Game::HEIGHT - 1)) / 2;
+    this->hitsDisplay->setPosition(Vec2(screen.origin.x + (screen.visibleSize.width - this->hitsDisplay->getContentSize().width)/2,
+        boardEndY + (screen.visibleSize.height - boardEndY - this->hitsDisplay->getContentSize().height)/2));
 }
 
 void GameplayScene::displayHits(int hits)
@@ -226,7 +212,7 @@ void GameplayScene::destroyBlocks(const std::vector<Position>& positions)
     for (const auto& pos : positions)
     {
         auto slotId = pos.yPos * Game::WIDTH + pos.xPos;
-        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(block, 4, Color4F::BLACK, 1, Color4F::BLACK);
+        static_cast<DrawNode*>(this->boardSlots[slotId])->drawPolygon(screen.block, 4, Color4F::BLACK, 1, Color4F::BLACK);
     }
 }
 
