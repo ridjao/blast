@@ -4,7 +4,6 @@
 
 USING_NS_CC;
 
-static const float fontSize = 24.0f;
 static const std::string fontFilePath = "fonts/Marker Felt.ttf";
 
 static const int INITIAL_TIME = 120;
@@ -42,19 +41,19 @@ bool GameplayScene::init()
     }
     this->drawBoard(GameplayScene::game.getBoardBlocks());
 
-    this->scoreDisplay = Label::createWithTTF("Score: " + std::to_string(GameplayScene::game.getScore()), fontFilePath, fontSize);
+    this->scoreDisplay = Label::createWithTTF("Score: " + std::to_string(GameplayScene::game.getScore()), fontFilePath, Screen::labelFontSize);
     this->scoreDisplay->setAnchorPoint(Vec2(0, 0));
     this->scoreDisplay->setPosition(Vec2(screen.origin.x + screen.xMargin,
         screen.origin.y + screen.visibleSize.height - this->scoreDisplay->getContentSize().height - screen.yMargin));
     this->addChild(this->scoreDisplay, 1);
 
-    this->timerDisplay = Label::createWithTTF("Time: " + std::to_string(GameplayScene::timeLeft), fontFilePath, fontSize);
+    this->timerDisplay = Label::createWithTTF("Time: " + std::to_string(GameplayScene::timeLeft), fontFilePath, Screen::labelFontSize);
     this->timerDisplay->setAnchorPoint(Vec2(0, 0));
     this->setTimerPosition();
     this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
     this->addChild(this->timerDisplay, 1);
 
-    this->hitsDisplay = Label::createWithTTF("", fontFilePath, fontSize + 10);
+    this->hitsDisplay = Label::createWithTTF("", fontFilePath, Screen::labelFontSize + 10);
     this->hitsDisplay->setAnchorPoint(Vec2(0, 0));
     this->setHitsPosition();
     this->addChild(this->hitsDisplay, 1);
@@ -187,7 +186,7 @@ void GameplayScene::setHitsPosition()
 {
     auto boardEndY = screen.origin.y + screen.visibleSize.height / 2 + (screen.blockSize * Game::HEIGHT + 0.2f * screen.blockSize * (Game::HEIGHT - 1)) / 2;
     this->hitsDisplay->setPosition(Vec2(screen.origin.x + (screen.visibleSize.width - this->hitsDisplay->getContentSize().width)/2,
-        boardEndY + (screen.visibleSize.height - boardEndY - this->hitsDisplay->getContentSize().height)/2));
+        boardEndY + (screen.visibleSize.height - screen.yMargin - boardEndY - 2 * this->hitsDisplay->getContentSize().height)/2));
 }
 
 void GameplayScene::displayHits(int hits)
@@ -234,15 +233,14 @@ void GameplayScene::handleMove(int slotId)
         return;
     }
 
-    CallFunc* destroyBlocks = CallFunc::create([=]() {
-        this->destroyBlocks(blocksToDestroy);
-        this->updateScore(GameplayScene::game.getScore());
-        this->displayHits(blocksToDestroy.size());
-        this->timeLeft += GameplayScene::game.computeTimeIncrement(blocksToDestroy.size()); });
+    this->destroyBlocks(blocksToDestroy);
+    this->updateScore(GameplayScene::game.getScore());
+    this->displayHits(blocksToDestroy.size());
+    this->timeLeft += GameplayScene::game.computeTimeIncrement(blocksToDestroy.size());
 
-    CallFunc* drawBlocks = CallFunc::create([=]() {
+    CallFunc* redrawBlocks = CallFunc::create([=]() {
         this->drawBoard(GameplayScene::game.getBoardBlocks());
         });
 
-    this->runAction(Sequence::create(destroyBlocks, DelayTime::create(0.05f), drawBlocks, nullptr));
+    this->runAction(Sequence::create(DelayTime::create(0.05f), redrawBlocks, nullptr));
 }

@@ -69,6 +69,7 @@ list(APPEND GAME_HEADER
      Classes/HomeScene.h
      Classes/GameplayScene.h
      Classes/GameoverScene.h
+     Classes/Screen.h
      Classes/Game/Block.h
      Classes/Game/Board.h
      Classes/Game/Game.h

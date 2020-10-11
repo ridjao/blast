@@ -1,6 +1,7 @@
 #include "GameoverScene.h"
 #include "GameplayScene.h"
 #include "HomeScene.h"
+#include "Screen.h"
 
 USING_NS_CC;
 
@@ -19,11 +20,11 @@ bool GameoverScene::init()
         return false;
     }
 
-    auto visibleSize = Director::getInstance()->getVisibleSize();
-    Vec2 origin = Director::getInstance()->getVisibleOrigin();
-    auto fontSize = 24.0f;
-    auto xMargin = visibleSize.width / 64;
-    auto yMargin = visibleSize.height / 64;
+    auto visibleSize = Screen::getInstance().visibleSize;
+    Vec2 origin = Screen::getInstance().origin;
+    auto fontSize = Screen::labelFontSize;
+    auto xMargin = Screen::getInstance().xMargin;
+    auto yMargin = Screen::getInstance().yMargin;
 
     auto scoreLabel = Label::createWithTTF("Score: " + std::to_string(GameoverScene::score), "fonts/Marker Felt.ttf", fontSize);
     scoreLabel->setAnchorPoint(Vec2(0, 0));
