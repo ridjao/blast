@@ -8,6 +8,7 @@ static const std::string fontFilePath = "fonts/Marker Felt.ttf";
 
 static const int INITIAL_TIME = 120;
 static const int REFRESH_TICKS = 60;
+static const int TIME_PENALTY = 10;
 
 static auto timeHitsSet = std::chrono::steady_clock::now();
 static auto gameover = false;
@@ -92,8 +93,9 @@ void GameplayScene::updateTimer()
         return;
     }
 
-    this->timerDisplay->setString("Time: " + std::to_string(this->timeLeft));
-    auto timeWidth = this->timerDisplay->getContentSize().width;
+    auto timeLeftStr = std::to_string(this->timeLeft);
+    this->timerDisplay->setString("Time: " + timeLeftStr);
+    auto timeWidth = timeLeftStr.length();
     static auto prevTimeWidth = timeWidth;
     if (prevTimeWidth != timeWidth)
     {
@@ -229,14 +231,17 @@ void GameplayScene::handleMove(int slotId)
             gameover = true;
             GameplayScene::game.end();
             Director::getInstance()->replaceScene(GameoverScene::createScene(GameplayScene::game.getScore()));
+            return;
         }
+        GameplayScene::timeLeft -= TIME_PENALTY;
         return;
     }
 
+    auto hits = blocksToDestroy.size();
     this->destroyBlocks(blocksToDestroy);
     this->updateScore(GameplayScene::game.getScore());
-    this->displayHits(blocksToDestroy.size());
-    this->timeLeft += GameplayScene::game.computeTimeIncrement(blocksToDestroy.size());
+    this->displayHits(hits);
+    this->timeLeft += GameplayScene::game.computeTimeIncrement(hits);
 
     CallFunc* redrawBlocks = CallFunc::create([=]() {
         this->drawBoard(GameplayScene::game.getBoardBlocks());
