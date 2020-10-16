@@ -30,9 +30,6 @@ bool GameplayScene::init()
         return false;
     }
 
-    auto boardOriginX = screen.origin.x + screen.visibleSize.width / 2 - (screen.blockSize * Game::WIDTH + 0.2f * screen.blockSize * (Game::WIDTH - 1)) / 2;
-    auto boardOriginY = screen.origin.y + screen.visibleSize.height / 2 - (screen.blockSize * Game::HEIGHT + 0.2f * screen.blockSize * (Game::HEIGHT - 1)) / 2;
-    this->createBoard(boardOriginX, boardOriginY);
     auto gameStarted = !GameplayScene::game.getBoardBlocks().empty();
     if (!gameStarted)
     {
@@ -40,7 +37,6 @@ bool GameplayScene::init()
         GameplayScene::game.start();
         gameover = false;
     }
-    this->drawBoard(GameplayScene::game.getBoardBlocks());
 
     this->scoreDisplay = Label::createWithTTF("Score: " + std::to_string(GameplayScene::game.getScore()), fontFilePath, Screen::labelFontSize);
     this->scoreDisplay->setAnchorPoint(Vec2(0, 0));
@@ -53,6 +49,11 @@ bool GameplayScene::init()
     this->setTimerPosition();
     this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
     this->addChild(this->timerDisplay, 1);
+
+    auto boardOriginX = screen.origin.x + screen.visibleSize.width / 2 - (screen.blockSize * Game::WIDTH + 0.2f * screen.blockSize * (Game::WIDTH - 1)) / 2;
+    auto boardOriginY = screen.origin.y + screen.visibleSize.height / 2 - (screen.blockSize * Game::HEIGHT + 0.2f * screen.blockSize * (Game::HEIGHT - 1)) / 2;
+    this->createBoard(boardOriginX, boardOriginY);
+    this->drawBoard(GameplayScene::game.getBoardBlocks());
 
     this->hitsDisplay = Label::createWithTTF("", fontFilePath, Screen::labelFontSize + 10);
     this->hitsDisplay->setAnchorPoint(Vec2(0, 0));
