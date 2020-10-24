@@ -1,6 +1,7 @@
 #include <chrono>
-#include "GameplayScene.h"
+#include "FirebaseHelper.h"
 #include "GameoverScene.h"
+#include "GameplayScene.h"
 
 USING_NS_CC;
 
@@ -47,7 +48,6 @@ bool GameplayScene::init()
     this->timerDisplay = Label::createWithTTF("Time: " + std::to_string(GameplayScene::timeLeft), fontFilePath, Screen::labelFontSize);
     this->timerDisplay->setAnchorPoint(Vec2(0, 0));
     this->setTimerPosition();
-    this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
     this->addChild(this->timerDisplay, 1);
 
     auto boardOriginX = screen.origin.x + screen.visibleSize.width / 2 - (screen.blockSize * Game::WIDTH + 0.2f * screen.blockSize * (Game::WIDTH - 1)) / 2;
@@ -60,6 +60,7 @@ bool GameplayScene::init()
     this->setHitsPosition();
     this->addChild(this->hitsDisplay, 1);
 
+    this->schedule(CC_SCHEDULE_SELECTOR(GameplayScene::runPeriodicTasks), 1.0f);
     return true;
 }
 
@@ -82,6 +83,8 @@ void GameplayScene::runPeriodicTasks(float dt)
     if (!gameover && !(++ticks % REFRESH_TICKS)) {
         Director::getInstance()->replaceScene(GameplayScene::createScene());
     }
+
+    FirebaseHelper::showBannerAd();
 }
 
 void GameplayScene::updateTimer()

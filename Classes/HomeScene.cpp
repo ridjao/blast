@@ -1,5 +1,6 @@
-#include "HomeScene.h"
+#include "FirebaseHelper.h"
 #include "GameplayScene.h"
+#include "HomeScene.h"
 #include "Screen.h"
 
 USING_NS_CC;
@@ -36,10 +37,16 @@ bool HomeScene::init()
     startMenu->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
     this->addChild(startMenu, 1);
 
+    this->schedule(CC_SCHEDULE_SELECTOR(HomeScene::runPeriodicTasks), 1.0f);
     return true;
 }
 
 void HomeScene::menuStartCallback(Ref* pSender)
 {
     Director::getInstance()->replaceScene(GameplayScene::createScene());
+}
+
+void HomeScene::runPeriodicTasks(float dt)
+{
+    FirebaseHelper::showBannerAd();
 }

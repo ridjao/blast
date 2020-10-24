@@ -4,6 +4,7 @@
 class HomeScene : public cocos2d::Scene
 {
     void menuStartCallback(cocos2d::Ref* pSender);
+    void runPeriodicTasks(float dt);
 public:
     static cocos2d::Scene* createScene();
     virtual bool init();

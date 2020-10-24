@@ -57,6 +57,7 @@ endif()
 # add cross-platforms source files and header files 
 list(APPEND GAME_SOURCE
      Classes/AppDelegate.cpp
+     Classes/FirebaseHelper.cpp
      Classes/HomeScene.cpp
      Classes/GameplayScene.cpp
      Classes/GameoverScene.cpp
@@ -66,6 +67,7 @@ list(APPEND GAME_SOURCE
      )
 list(APPEND GAME_HEADER
      Classes/AppDelegate.h
+     Classes/FirebaseHelper.h
      Classes/HomeScene.h
      Classes/GameplayScene.h
      Classes/GameoverScene.h
@@ -134,18 +136,27 @@ set(all_code_files
     ${GAME_HEADER}
     ${GAME_SOURCE}
     )
+
+set(FIREBASE_CPP_SDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/firebase_cpp_sdk)
+
 if(NOT ANDROID)
     add_executable(${APP_NAME} ${all_code_files})
 else()
     add_library(${APP_NAME} SHARED ${all_code_files})
     add_subdirectory(${COCOS2DX_ROOT_PATH}/cocos/platform/android ${ENGINE_BINARY_PATH}/cocos/platform)
     target_link_libraries(${APP_NAME} -Wl,--whole-archive cpp_android_spec -Wl,--no-whole-archive)
+
+    string(REPLACE "_" ";" STL_LIST ${ANDROID_STL})
+    list(GET STL_LIST 0 STL)
+    set(FIREBASE_LIBRARY_DIR ${FIREBASE_CPP_SDK_DIR}/libs/android/${ANDROID_ABI}/${STL})
+    target_link_libraries(${APP_NAME} ${FIREBASE_LIBRARY_DIR}/libfirebase_admob.a ${FIREBASE_LIBRARY_DIR}/libfirebase_app.a)
 endif()
 
 target_link_libraries(${APP_NAME} cocos2d)
 target_include_directories(${APP_NAME}
         PRIVATE Classes
         PRIVATE ${COCOS2DX_ROOT_PATH}/cocos/audio/include/
+        PRIVATE ${FIREBASE_CPP_SDK_DIR}/include
 )
 
 # mark app resources

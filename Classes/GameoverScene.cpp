@@ -1,3 +1,4 @@
+#include "FirebaseHelper.h"
 #include "GameoverScene.h"
 #include "GameplayScene.h"
 #include "HomeScene.h"
@@ -60,6 +61,7 @@ bool GameoverScene::init()
     homeMenu->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2 + startLabel->getContentSize().height));
     this->addChild(homeMenu, 1);
 
+    this->schedule(CC_SCHEDULE_SELECTOR(GameoverScene::runPeriodicTasks), 1.0f);
     return true;
 }
 
@@ -71,4 +73,9 @@ void GameoverScene::menuStartCallback(Ref* pSender)
 void GameoverScene::menuHomeCallback(Ref* pSender)
 {
     Director::getInstance()->replaceScene(HomeScene::createScene());
+}
+
+void GameoverScene::runPeriodicTasks(float dt)
+{
+    FirebaseHelper::showBannerAd();
 }

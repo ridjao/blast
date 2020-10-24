@@ -23,6 +23,7 @@
  ****************************************************************************/
 
 #include "AppDelegate.h"
+#include "FirebaseHelper.h"
 #include "HomeScene.h"
 
 // #define USE_AUDIO_ENGINE 1
@@ -103,6 +104,9 @@ bool AppDelegate::applicationDidFinishLaunching() {
     }
 
     register_all_packages();
+
+    FirebaseHelper::initializeFirebase();
+    FirebaseHelper::createBannerAd();
 
     // create a scene. it's an autorelease object
     auto scene = HomeScene::createScene();
