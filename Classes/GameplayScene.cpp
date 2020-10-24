@@ -171,12 +171,12 @@ void GameplayScene::drawBoard(const std::vector<BlockType>& blocks)
 
 void GameplayScene::drawBlock(int slotId, int blockTypeId)
 {
-    Color4F pastelRed    (Color4B(255, 102,  99, 255));
-    Color4F pastelBlue   (Color4B(158, 193, 207, 255));
-    Color4F pastelGreen  (Color4B(158, 224, 158, 255));
-    Color4F pastelYellow (Color4B(253, 253, 151, 255));
-    Color4F pastelViolet (Color4B(204, 153, 201, 255));
-    Color4F pastelOrange (Color4B(254, 177,  68, 255));
+    Color4F pastelRed    (Color4B(248, 187, 208, 255));
+    Color4F pastelBlue   (Color4B( 38, 198, 218, 255));
+    Color4F pastelGreen  (Color4B(137, 226,  18, 255));
+    Color4F pastelYellow (Color4B(249, 250,  12, 255));
+    Color4F pastelViolet (Color4B(191,  46, 250, 255));
+    Color4F pastelOrange (Color4B(255, 152,   0, 255));
 
     static const Color4F colors[]{ pastelRed, pastelBlue, pastelGreen, pastelYellow, pastelViolet, pastelOrange };
 

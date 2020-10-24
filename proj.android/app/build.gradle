@@ -11,8 +11,8 @@ android {
         applicationId "org.cocos2dx.blast"
         minSdkVersion PROP_MIN_SDK_VERSION
         targetSdkVersion PROP_TARGET_SDK_VERSION
-        versionCode 3
-        versionName "1.2"
+        versionCode 4
+        versionName "1.21"
 
         externalNativeBuild {
             cmake {
@@ -55,12 +55,12 @@ android {
 
     buildTypes {
         release {
-            debuggable false
-            jniDebuggable false
-            renderscriptDebuggable false
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable true
+            jniDebuggable true
+            renderscriptDebuggable true
+            //minifyEnabled true
+            //shrinkResources true
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (project.hasProperty("RELEASE_STORE_FILE")) {
                 signingConfig signingConfigs.release
             }
@@ -70,6 +70,12 @@ android {
             debuggable true
             jniDebuggable true
             renderscriptDebuggable true
+            //minifyEnabled true
+            //shrinkResources true
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (project.hasProperty("RELEASE_STORE_FILE")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
@@ -98,7 +104,7 @@ dependencies {
     implementation project(':libcocos2dx')
 
     implementation platform('com.google.firebase:firebase-bom:25.12.0')
-    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-analytics:17.6.0'
     implementation 'com.google.firebase:firebase-ads:19.4.0'
     implementation 'com.google.android.gms:play-services-base:17.4.0'
 }
