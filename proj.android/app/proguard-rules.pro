@@ -23,6 +23,8 @@
 -dontwarn com.chukong.**
 -keep public class com.huawei.android.** { *; }
 -dontwarn com.huawei.android.**
+-keep class com.google.** { *; }
+-dontwarn com.google.**
 
 # Proguard Apache HTTP for release
 -keep class org.apache.http.** { *; }

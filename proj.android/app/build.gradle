@@ -1,7 +1,4 @@
-import org.gradle.internal.os.OperatingSystem
-
 apply plugin: 'com.android.application'
-
 apply plugin: 'com.google.gms.google-services'
 
 android {
@@ -25,6 +22,7 @@ android {
         ndk {
             abiFilters = []
             abiFilters.addAll(PROP_APP_ABI.split(':').collect{it as String})
+            debugSymbolLevel 'SYMBOL_TABLE'
         }
     }
 
@@ -42,8 +40,7 @@ android {
     }
 
     signingConfigs {
-
-       release {
+        release {
             if (project.hasProperty("RELEASE_STORE_FILE")) {
                 storeFile file(RELEASE_STORE_FILE)
                 storePassword RELEASE_STORE_PASSWORD
@@ -55,12 +52,12 @@ android {
 
     buildTypes {
         release {
-            debuggable true
+            debuggable false
             jniDebuggable true
             renderscriptDebuggable true
-            //minifyEnabled true
-            //shrinkResources true
-            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (project.hasProperty("RELEASE_STORE_FILE")) {
                 signingConfig signingConfigs.release
             }
@@ -70,18 +67,11 @@ android {
             debuggable true
             jniDebuggable true
             renderscriptDebuggable true
-            //minifyEnabled true
-            //shrinkResources true
-            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (project.hasProperty("RELEASE_STORE_FILE")) {
-                signingConfig signingConfigs.release
-            }
         }
     }
 }
 
 android.applicationVariants.all { variant ->
-    def project_root_folder = "${projectDir}/../.."
     def dest_assets_folder = "${projectDir}/assets"
 
     // delete previous files first
@@ -105,7 +95,7 @@ dependencies {
 
     implementation platform('com.google.firebase:firebase-bom:25.12.0')
     implementation 'com.google.firebase:firebase-analytics:17.6.0'
-    implementation 'com.google.firebase:firebase-ads:19.4.0'
-    implementation 'com.google.android.gms:play-services-base:17.4.0'
+    implementation 'com.google.firebase:firebase-ads:19.5.0'
+    implementation 'com.google.android.gms:play-services-base:17.5.0'
 }
 
